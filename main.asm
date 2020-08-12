@@ -5,16 +5,28 @@ include<p16f877.inc>
 
 CONTADOR  EQU H'20'	
 ;////////////////////
+; COMANDOS LCD
+;////////////////////
+HOME 	EQU H'02'
+;////////////////////
 ; CONST RETARDO
 ;////////////////////		
-VALOR1    EQU H'21'
-VALOR2    EQU H'22'
-VAL 	  EQU H'24'
+VALOR1   EQU H'21'
+VALOR2   EQU H'22'
+VAL 	 EQU H'24'
+REG1 	 EQU H'25'
+REG2     EQU H'26'
+REG3     EQU H'27'
+CONST1   EQU H'F2'
+CONST2   EQU H'F5'
+CONST3   EQU H'1C'
 ;////////////////////
 ; REG FUNCIONES
 ;////////////////////	
 REGA  	  EQU H'23'		;Registro donde se almacena resultado de conversion A/D
-
+;////////////////////
+; INICIO
+;////////////////////
 				ORG   	0				;
 				GOTO  	INICIO		  	;Define vector de Reset
 				ORG   	4				;
@@ -23,7 +35,7 @@ REGA  	  EQU H'23'		;Registro donde se almacena resultado de conversion A/D
 INICIO:			BSF   	STATUS,5		;Cambio de banco
 				BCF   	STATUS,6		;Cambio al banco 1
 				CLRF   	ADCON1			;Configura al puerto A como entrada analogica
-				CLRF  	TRISB			;Configura al puerto B como salida
+				CLRF  	TRISB			;Configura al puerto B como salida (LCD)
 				CLRF  	TRISC			;Configura al puerto C como salida
 				MOVLW 	H'C0'			;
 				MOVWF  	TRISD			;Configura al puerto D[0,1] como entrada
@@ -37,7 +49,7 @@ INICIO:			BSF   	STATUS,5		;Cambio de banco
 		 								;		  001(Encender el convertidor A/D)
 	;Configuracion de interrupciones
 				BCF   	INTCON,T0IF	  	;Bandera de desbordamiento. T0IF = 0
-				BSF   	INTCON,T0IE	  	;Habilita interrupciÃ³n por desbordamiento del TIMER0
+				BSF   	INTCON,T0IE	  	;Habilita interrupcion por desbordamiento del TIMER0
 				BSF   	INTCON,GIE	  	;Habilita interrupciones generales
 	;Configuracion de PWM
 				MOVLW 	D'255'			;W = D'255'
@@ -50,10 +62,11 @@ INICIO:			BSF   	STATUS,5		;Cambio de banco
 				MOVLW 	D'120'			;W = D'120'
 				MOVWF 	CCPR2L			;Define el tiempo en alto de la señal
 	;Inicializaciones
+				CALL	INICIA_LCD		;Inicializar el LCD
 				CLRF  	PORTB			;Limpia el puerto B
 				CLRF	PORTC			;Limpia el puerto C
 				CLRF  	CONTADOR		;Limpiar el registro CONTADOR
-
+				CALL	MENSAJE_1
 				GOTO  	$				;Loop infinito
 INTERRUPCIONES:	BTFSS 	INTCON,T0IF	  	;¿T0IF = 1?
 				GOTO  	SAL_NO_FUE_TMR0 ;No: ir a SAL_NO_FUE_TMR0
@@ -62,7 +75,7 @@ INTERRUPCIONES:	BTFSS 	INTCON,T0IF	  	;¿T0IF = 1?
 				SUBWF 	CONTADOR,W	  	;W = CONTADOR - D'150'
 				BTFSS 	STATUS,Z		;¿CONTADOR = D'150'?
 				GOTO  	SAL_INT		  	;No: ir a SAL_INT
-				COMF  	PORTB			;Si: Limpiar el puerto B
+				CALL	MENSAJE_1		;Si: ir a MENSAJE_1
 				CLRF  	CONTADOR		;Limpiar el registro CONTADOR
 SAL_INT:		BCF   	INTCON,T0IF	  	;Bandera de desbordamiento. T0IF = 0
 SAL_NO_FUE_TMR0:RETFIE				  	;Return de interrupcion
@@ -82,7 +95,7 @@ INICIA_LCD: 	MOVLW 	H'38'
      			CALL  	COMANDO
      			MOVLW 	H'06'
      			CALL  	COMANDO
-    			MOVLW 	H'02'
+    			MOVLW 	HOME
     			CALL  	COMANDO
     			RETURN
 ;/////////////////////////////
@@ -93,7 +106,7 @@ COMANDO: 		MOVWF 	PORTB
     	 		BCF  	PORTC,0       	;RS se pone a 0 (CONTROL)
     	 		BSF   	PORTC,2       	;Se habilita E (Enable)
     	 		CALL  	RETARDO_200ms
-    	 		BCF   	PORTC,1
+    	 		BCF   	PORTC,2
     	 		RETURN	
 ;/////////////////////////////
 ; PASO DATOS A LCD
@@ -103,13 +116,52 @@ DATOS:	 		MOVWF 	PORTB
     	 		BSF   	PORTC,0       	;RS se pone a 1 (DATOS)
     	 		BSF   	PORTC,2       	;Se habilita E (Enable)
     	 		CALL  	RETARDO_200ms
-    	 		BCF   	PORTC,1
+    	 		BCF   	PORTC,2
     	 		CALL  	RETARDO_200ms
     	 		CALL  	RETARDO_200ms
    		 		RETURN
 ;******************************
 ;	FUNCIONES DE RUTINAS
 ;******************************
+;/////////////////////////////
+; 		MENSAJE 1
+;/////////////////////////////
+MENSAJE_1:		MOVLW   HOME
+   				CALL    COMANDO 		;LCD: "VENGA AL SENSOR"
+   				MOVLW  	A'V'
+	        	CALL   	DATOS
+   		    	MOVLW  	A'V'
+	        	CALL   	DATOS
+	        	MOVLW  	A'E'
+	        	CALL   	DATOS
+	        	MOVLW  	A'N'
+	        	CALL   	DATOS
+	        	MOVLW  	A'G'
+	        	CALL   	DATOS
+	        	MOVLW  	A'A'
+	        	CALL   	DATOS
+	        	MOVLW  	A' '
+	        	CALL   	DATOS
+	        	MOVLW  	A'A'
+	        	CALL   	DATOS
+	        	MOVLW  	A'L'
+	        	CALL   	DATOS
+	        	MOVLW  	A' '
+	        	CALL   	DATOS
+	        	MOVLW  	A'S'
+	        	CALL   	DATOS
+	        	MOVLW  	A'E'
+	        	CALL   	DATOS
+	        	MOVLW  	A'N'
+	        	CALL   	DATOS
+	        	MOVLW  	A'S'
+	        	CALL   	DATOS
+	        	MOVLW  	A'O'
+	        	CALL   	DATOS
+	        	MOVLW  	A'R'
+	        	CALL   	DATOS
+	        	CALL	RETARDO_1s
+	        	RETURN
 ;////////////////////
 ; 	 LECTURA A-D
 ;////////////////////		
@@ -143,4 +195,22 @@ RETARDO_20us: 	MOVLW 	H'30'			;W = 30
 LOOP:	 		DECFSZ  VAL				;VAL = VAL-1 y VAL = 0?
 		 		GOTO 	LOOP			;No: ir a LOOP
 		 		RETURN					;Sí: regresar
-				END			
+;///////////////////
+; RETARDO_1s
+;///////////////////
+RETARDO_1s:    MOVLW  CONST3 	;Carga lo vlaores para el while principal
+		  	   MOVWF  REG3
+LOOP3:  	   MOVLW  CONST2	;este es el loop mÃ¡s externo
+			   MOVWF  REG2
+LOOP2:	 	   MOVLW  CONST1	;el loop de enmedio
+		 	   MOVWF  REG1	
+LOOP1:	  	   DECFSZ REG1		;el loop mas anidado
+		  	   GOTO   LOOP1		
+		  	   DECFSZ REG2		
+		  	   GOTO   LOOP2     ;decrementa en uno hasta que sea 0
+		  	   DECFSZ REG3
+		  	   GOTO   LOOP3
+		  	   RETURN
+
+
+		  	   END
