@@ -7,14 +7,10 @@ include<p16f877.inc>
 CONTADOR  EQU H'20'	
 ;////////////////////
 ; CONST RETARDO
-;////////////////////		
-VALOR1    EQU H'21'
-VALOR2    EQU H'22'
-VAL 	  EQU H'24'
 ;////////////////////
-; REG FUNCIONES
-;////////////////////	
-REGA  	  EQU H'23'		;Registro donde se almacena resultado de conversion A/D
+CONST1   EQU H'F2'
+CONST2   EQU H'F5'
+CONST3   EQU H'1C'
 
 				ORG   	0				;
 				GOTO  	INICIO		  	;Define vector de Reset
@@ -165,21 +161,52 @@ ESPERA: 		BTFSC 	ADCON0,2		;¿GO/DONE = 0? (termino conversion)
 				MOVF  	ADRESH,W		;Si: W = Resultado del convertidor A/D (ADRESH)
 				MOVWF 	REGA			;Se mueve el resultado al REGA
 				RETURN
+MENOR_Q_A:		MOVLW  H'30'			;SI ES MENOR LE SUMA 30
+				ADDWF  REGCONV,0
+				CALL   DATOS      		;ENVIA LOS DATOS AL LCD
+				RETURN
+;///////////////////////
+; 		DIVISION
+;///////////////////////
+DIVISION:      CLRF   REGAUX		;Limpieza de registros
+			   CLRF   REGDIV
+			   CLRF   REGRES
+DIVI:		   MOVF   REGA,0
+			   MOVWF  REGAUX
+			   MOVF   REGB,0
+RESTA:		   SUBWF  REGAUX,1	;restas sucesivas lo que esta en reg aux-regb
+			   BTFSS  STATUS,C
+			   GOTO   RESIDUO		
+			   INCF   REGDIV
+			   GOTO   RESTA
+RESIDUO:       ADDWF  REGAUX,0	;se suma otra vez el dividendo para obtener el residuo
+			   MOVWF  REGRES
+			   RETURN
+
+ 
 ;******************************
 ;			RETARDOS
 ;******************************
+
+;///////////////////
+; RETARDO_1s
+;///////////////////
+
+RETARDO_1s:    MOVLW  CONST3 	;Carga lo vlaores para el while principal
+		  	   MOVWF  REG3
+LOOP3:  	   MOVLW  CONST2	;este es el loop más externo
+			   MOVWF  REG2
+LOOP2:	 	   MOVLW  CONST1	;el loop de enmedio
+		 	   MOVWF  REG1	
+LOOP1:	  	   DECFSZ REG1		;el loop mas anidado
+		  	   GOTO   LOOP1		
+		  	   DECFSZ REG2		
+		  	   GOTO   LOOP2     ;decrementa en uno hasta que sea 0
+		  	   DECFSZ REG3
+		  	   GOTO   LOOP3
+		  	   RETURN
 ;///////////////////
 ; RETARDO_200ms
-;///////////////////
-RETARDO_200ms: 	MOVLW  	H'02'
-       		   	MOVWF  	VALOR2 
-CICLO1:		   	MOVLW  	D'164'
-               	MOVWF  	VALOR1
-CICLO2:	       	DECFSZ 	VALOR1,1
-      		   	GOTO   	CICLO2
-      		   	DECFSZ 	VALOR2,1
-      		   	GOTO   	CICLO1
-      		   	RETURN
 ;///////////////////
 ; RETARDO_20 micro s
 ;/////////////////// 		   	
