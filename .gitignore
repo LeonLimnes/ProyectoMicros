@@ -1,0 +1,7 @@
+*.pdsbak
+*.workspace
+*.O
+*.cof
+*.err
+*.lst
+*.map
