@@ -1,7 +1,8 @@
 processor 16f877
 include<p16f877.inc>
-;Propósito: sistema para el control de flujo de personas hacia el interior de un
+;PropÃ³sito: sistema para el control de flujo de personas hacia el interior de un
 ;			 establecimiento en un contexto de pandemia por coronavirus (COVID-19).
+
 
 CONTADOR  EQU H'20'	
 ;////////////////////
@@ -37,64 +38,108 @@ INICIO:			BSF   	STATUS,5		;Cambio de banco
 		 								;		  001(Encender el convertidor A/D)
 	;Configuracion de interrupciones
 				BCF   	INTCON,T0IF	  	;Bandera de desbordamiento. T0IF = 0
-				BSF   	INTCON,T0IE	  	;Habilita interrupción por desbordamiento del TIMER0
+				BSF   	INTCON,T0IE	  	;Habilita interrupciÃ³n por desbordamiento del TIMER0
 				BSF   	INTCON,GIE	  	;Habilita interrupciones generales
 	;Configuracion de PWM
 				MOVLW 	D'255'			;W = D'255'
-				MOVWF 	PR2				;Periodo de la se�al = D'255'
+				MOVWF 	PR2				;Periodo de la señal = D'255'
 				MOVLW 	B'00001100'		;W = B'00001100'
 				MOVWF 	CCP2CON			;Configura a CCP2 como PWM
 				MOVLW 	B'00000111'		;W = B'00000111'
 				MOVWF	T2CON			;Activacion del Timer 2
 										;Pre-divisor Timer 2 = b'11'
 				MOVLW 	D'120'			;W = D'120'
-				MOVWF 	CCPR2L			;Define el tiempo en alto de la se�al
+				MOVWF 	CCPR2L			;Define el tiempo en alto de la señal
 	;Inicializaciones
 				CLRF  	PORTB			;Limpia el puerto B
 				CLRF	PORTC			;Limpia el puerto C
 				CLRF  	CONTADOR		;Limpiar el registro CONTADOR
 
-				GOTO  	$				;Loop infinito
-INTERRUPCIONES:	BTFSS 	INTCON,T0IF	  	;�T0IF = 1?
-				GOTO  	SAL_NO_FUE_TMR0 ;No: ir a SAL_NO_FUE_TMR0
-				INCF  	CONTADOR		;Si: incrementar CONTADOR
-				MOVLW 	D'150'		  	;W = D'150'
-				SUBWF 	CONTADOR,W	  	;W = CONTADOR - D'150'
-				BTFSS 	STATUS,Z		;�CONTADOR = D'150'?
-				GOTO  	SAL_INT		  	;No: ir a SAL_INT
-				COMF  	PORTB			;Si: Limpiar el puerto B
-				CLRF  	CONTADOR		;Limpiar el registro CONTADOR
-SAL_INT:		BCF   	INTCON,T0IF	  	;Bandera de desbordamiento. T0IF = 0
-SAL_NO_FUE_TMR0:RETFIE				  	;Return de interrupcion
+;////////////////////
+; INICIO
+;////////////////////
+    ORG  0
+    GOTO INICIO
+    ORG  5
+;///////////////////////
+; CONFIGURACION PUERTOS
+;///////////////////////
+INICIO: CLRF  PORTA
+        CLRF  PORTB
+		CLRF  PORTC
+		CLRF  PORTD  
+        BSF   STATUS,5		;CAMBIO DE BANCO
+        BCF   STATUS,6
+        MOVLW b'00000000'   ;PUERTO B COMO SALIDA
+   		MOVWF TRISB
+		MOVLW b'11111111'	;PUERTO C COMO ENTRADA
+   		MOVWF TRISC
+		MOVLW b'11111111'	;PUERTO D COMO ENTRADA
+   		MOVWF TRISD
+   		MOVLW 0x07
+   		MOVWF ADCON1
+   		MOVLW b'00000000'	;PUERTO A COMO SALIDA
+   		MOVWF TRISA
+   		BCF   STATUS,5	 	 ;VUELTA DE BANCO
+;///////////////////////////////////////
+;		FUNCION DE SELECION DE RUTINA
+;///////////////////////////////////////
+HOLA: CALL    INICIA_LCD
+		MOVF    PORTC,0 ;ENTRADA DE SELECCION
+		MOVLW HOME
+   		CALL  COMANDO
+		MOVLW A'H'
+  		CALL  DATOS
+  		MOVLW A'o'
+  		CALL  DATOS
+  		MOVLW A'l'
+  		CALL  DATOS
+  		MOVLW A'a'
+  		CALL  DATOS
+		MOVLW ENTER 
+  		CALL  COMANDO ;nueva linea
+  		MOVLW A'M'
+  		CALL  DATOS
+ 		MOVLW A'u'
+  		CALL  DATOS
+ 		MOVLW A'n'
+  		CALL  DATOS
+  		MOVLW A'd'
+  		CALL  DATOS
+  		MOVLW A'o'
+  		CALL  DATOS
+  		CALL  RETARDO_1s
+		GOTO  HOLA
 ;**********************************************************
 ;***********************--------------*********************
 ;						  FUNCIONES
 ;***********************--------------*********************
 ;**********************************************************
+
 ;/////////////////////////////
 ; CONFIGURACION INICIAL LCD
 ;/////////////////////////////
-INICIA_LCD: 	MOVLW 	H'38'
-     			CALL  	COMANDO
-     			MOVLW 	H'0C'
-				CALL  	COMANDO
-     			MOVLW 	H'01'
-     			CALL  	COMANDO
-     			MOVLW 	H'06'
-     			CALL  	COMANDO
-    			MOVLW 	H'02'
-    			CALL  	COMANDO
-    			RETURN
+INICIA_LCD   MOVLW 0x38
+     		 CALL  COMANDO
+     		 MOVLW 0x0C
+			 CALL  COMANDO
+     		 MOVLW LIMPIA
+     		 CALL  COMANDO
+     		 MOVLW 0x06
+     		 CALL  COMANDO
+    		 MOVLW HOME
+    		 CALL  COMANDO
+    		 RETURN
 ;/////////////////////////////
 ; PASO COMANDOS A LCD
 ;/////////////////////////////
-COMANDO: 		MOVWF 	PORTB 
-    	 		CALL  	RETARDO_200ms
-    	 		BCF  	PORTC,0       	;RS se pone a 0 (CONTROL)
-    	 		BSF   	PORTC,2       	;Se habilita E (Enable)
-    	 		CALL  	RETARDO_200ms
-    	 		BCF   	PORTC,1
-    	 		RETURN	
+COMANDO: MOVWF PORTB 
+    	 CALL  RETARDO_200ms
+    	 BCF   PORTA,0       ;RS se pone a 0 (CONTROL)
+    	 BSF   PORTA,1       ;Se habilita E (Enable)
+    	 CALL  RETARDO_200ms
+    	 BCF   PORTA,1
+    	 RETURN	
 ;/////////////////////////////
 ; PASO DATOS A LCD
 ;/////////////////////////////
@@ -115,7 +160,7 @@ DATOS:	 		MOVWF 	PORTB
 ;////////////////////		
 LEEAD:  		BSF   	ADCON0,2		;Bandera GO/DONE = 1 para iniciar la conversion
 				CALL  	RETARDO_20us	;Esperar 20 micro segundos
-ESPERA: 		BTFSC 	ADCON0,2		;�GO/DONE = 0? (termino conversion)
+ESPERA: 		BTFSC 	ADCON0,2		;¿GO/DONE = 0? (termino conversion)
 				GOTO  	ESPERA			;No: espera
 				MOVF  	ADRESH,W		;Si: W = Resultado del convertidor A/D (ADRESH)
 				MOVWF 	REGA			;Se mueve el resultado al REGA
@@ -142,5 +187,6 @@ RETARDO_20us: 	MOVLW 	H'30'			;W = 30
 		 		MOVWF 	VAL				;VAL = W
 LOOP:	 		DECFSZ  VAL				;VAL = VAL-1 y VAL = 0?
 		 		GOTO 	LOOP			;No: ir a LOOP
-		 		RETURN					;S�: regresar
+		 		RETURN					;Sí: regresar
 				END			
+
