@@ -2,12 +2,18 @@ processor 16f877
 include<p16f877.inc>
 ;PropÃ³sito: sistema para el control de flujo de personas hacia el interior de un
 ;			 establecimiento en un contexto de pandemia por coronavirus (COVID-19).
+
 CONTADOR  EQU H'20'	
 ;////////////////////
 ; CONST RETARDO
 ;////////////////////		
 VALOR1    EQU H'21'
 VALOR2    EQU H'22'
+VAL 	  EQU H'24'
+;////////////////////
+; REG FUNCIONES
+;////////////////////	
+REGA  	  EQU H'23'		;Registro donde se almacena resultado de conversion A/D
 
 				ORG   	0				;
 				GOTO  	INICIO		  	;Define vector de Reset
@@ -20,7 +26,7 @@ INICIO:			BSF   	STATUS,5		;Cambio de banco
 				CLRF  	TRISB			;Configura al puerto B como salida
 				CLRF  	TRISC			;Configura al puerto C como salida
 				MOVLW 	H'C0'			;
-				MOVF  	TRISD			;Configura al puerto D[0,1] como entrada
+				MOVWF  	TRISD			;Configura al puerto D[0,1] como entrada
 				MOVLW 	B'00000111'	  	;PS2=1,PS1=1,PS=1
 				MOVWF 	OPTION_REG	  	;Pre-divisor del TMR0 = 256
 				BCF   	STATUS,5		;Cambio al banco 0
@@ -101,6 +107,22 @@ DATOS:	 		MOVWF 	PORTB
     	 		CALL  	RETARDO_200ms
     	 		CALL  	RETARDO_200ms
    		 		RETURN
+;******************************
+;	FUNCIONES DE RUTINAS
+;******************************
+;////////////////////
+; 	 LECTURA A-D
+;////////////////////		
+LEEAD:  		BSF   	ADCON0,2		;Bandera GO/DONE = 1 para iniciar la conversion
+				CALL  	RETARDO_20us	;Esperar 20 micro segundos
+ESPERA: 		BTFSC 	ADCON0,2		;¿GO/DONE = 0? (termino conversion)
+				GOTO  	ESPERA			;No: espera
+				MOVF  	ADRESH,W		;Si: W = Resultado del convertidor A/D (ADRESH)
+				MOVWF 	REGA			;Se mueve el resultado al REGA
+				RETURN
+;******************************
+;			RETARDOS
+;******************************
 ;///////////////////
 ; RETARDO_200ms
 ;///////////////////
@@ -113,4 +135,12 @@ CICLO2:	       	DECFSZ 	VALOR1,1
       		   	DECFSZ 	VALOR2,1
       		   	GOTO   	CICLO1
       		   	RETURN
+;///////////////////
+; RETARDO_20 micro s
+;/////////////////// 		   	
+RETARDO_20us: 	MOVLW 	H'30'			;W = 30
+		 		MOVWF 	VAL				;VAL = W
+LOOP:	 		DECFSZ  VAL				;VAL = VAL-1 y VAL = 0?
+		 		GOTO 	LOOP			;No: ir a LOOP
+		 		RETURN					;Sí: regresar
 				END			
