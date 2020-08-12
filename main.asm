@@ -208,6 +208,16 @@ LOOP1:	  	   DECFSZ REG1		;el loop mas anidado
 ;///////////////////
 ; RETARDO_200ms
 ;///////////////////
+RETARDO_200ms: 	MOVLW  	H'02'
+       		   	MOVWF  	VALOR2 
+CICLO1:		   	MOVLW  	D'164'
+               	MOVWF  	VALOR1
+CICLO2:	       	DECFSZ 	VALOR1,1
+      		   	GOTO   	CICLO2
+      		   	DECFSZ 	VALOR2,1
+      		   	GOTO   	CICLO1
+      		   	RETURN
+:////////////////////
 ; RETARDO_20 micro s
 ;/////////////////// 		   	
 RETARDO_20us: 	MOVLW 	H'30'			;W = 30
