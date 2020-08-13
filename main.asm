@@ -197,8 +197,7 @@ DATOS:	 		MOVWF 	PORTB
 ENCENDER_MOTOR: MOVLW 	D'150'			;W = D'150'
 				MOVWF 	CCPR2L			;Define el tiempo en alto de la señal
 				CALL	RETARDO_1s 		;Llamar a retardo
-				MOVLW 	D'0'			;W = D'0'
-				MOVWF 	CCPR2L			;Define el tiempo en alto de la señal
+				CLRF 	CCPR2L			;Tiempo en alto de la señal
 				RETURN
 ;/////////////////////////////
 ; 		MENSAJE 1
