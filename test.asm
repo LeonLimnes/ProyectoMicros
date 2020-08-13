@@ -195,10 +195,10 @@ DATOS:	 		MOVWF 	PORTB
 ; 		ENCENDER MOTOR
 ;/////////////////////////////
 ENCENDER_MOTOR: MOVLW 	D'150'			;W = D'150'
-				MOVWF 	CCPR2L			;Define el tiempo en alto de la señal
+				MOVWF 	CCPR2L			;Define el tiempo en alto de la seÃ±al
 				CALL	RETARDO_1s 		;Llamar a retardo
 				MOVLW 	D'0'			;W = D'0'
-				MOVWF 	CCPR2L			;Define el tiempo en alto de la señal
+				MOVWF 	CCPR2L			;Define el tiempo en alto de la seÃ±al
 				RETURN
 ;/////////////////////////////
 ; 		MENSAJE 1
@@ -360,7 +360,7 @@ MENSAJE_4:		CALL	INICIA_LCD
 ;////////////////////		
 LEEAD:  		BSF   	ADCON0,2		;Bandera GO/DONE = 1 para iniciar la conversion
 				CALL  	RETARDO_20us	;Esperar 20 micro segundos
-ESPERA: 		BTFSC 	ADCON0,2		;¿GO/DONE = 0? (termino conversion)
+ESPERA: 		BTFSC 	ADCON0,2		;Â¿GO/DONE = 0? (termino conversion)
 				GOTO  	ESPERA			;No: espera
 				MOVF  	ADRESH,W		;Si: W = Resultado del convertidor A/D (ADRESH)
 				MOVWF 	REGA			;Se mueve el resultado al REGA
