@@ -115,6 +115,8 @@ INTERRUPCIONES:	BTFSS 	INTCON,T0IF	  	;�T0IF = 1?
 			;/////////////////////////
 			;Envio valor leido a lcd
 			;/////////////////////////
+				MOVLW   0x80
+   				CALL    COMANDO 
 VALOR_AD:		CALL    LEEAD
 	        	MOVF    REGA,0
 	        	MOVWF   REGVAL
