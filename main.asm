@@ -70,9 +70,9 @@ REGAD3      EQU H'3A'
 ;////////////////////////////////
 ;REGISTROS PARA COMPARACION
 ;////////////////////////////////
-REGAD1 		EQU H'3B'
-REGAD2      EQU H'3C'
-REGAD3      EQU H'3D'
+REGCOMP1 		EQU H'3B'
+REGCOMP2      	EQU H'3C'
+REGCOMP3      	EQU H'3D'
 ;////////////////////
 ; INICIO
 ;////////////////////
@@ -125,11 +125,12 @@ INTERRUPCIONES:	BTFSS 	INTCON,T0IF	  	;�T0IF = 1?
 				BTFSS 	STATUS,Z		;�CONTADOR = D'150'?
 				GOTO  	SAL_INT		  	;No: ir a SAL_INT
 				CALL	ENCENDER_MOTOR
+				CLRF  	CONTADOR		;Limpiar el registro CONTADOR
 			;/////////////////////////
 			;Envio valor leido a lcd
 			;/////////////////////////
 			 
-VALOR_AD:		CALL	MENSAJE_4
+VALOR_AD:		CALL	MENSAJE_3;	MENSAJE DE TEMPERATURA
 				MOVLW  	0xC4
 	        	CALL   	COMANDO
 				CALL    LEEAD
@@ -151,8 +152,37 @@ VALOR_AD:		CALL	MENSAJE_4
 ;/////////////////////////
 ;Comparacion temperatura
 ;/////////////////////////
-				
-				CLRF  	CONTADOR		;Limpiar el registro CONTADOR
+				MOVLW 	H'03' ;SE MUEVE UN 3 AL REGISTRO DE COMPARACION1
+				MOVWF   REGCOMP1 
+				MOVF    REGAD1,W ;SE MEUVEN LAS DECENAS A W
+				SUBWF	REGCOMP1,REGCOMP1	;SE RESTA 3 - DECENAS
+				BTFSS	STATUS,C ;SI CARRY ES 0 ENTONCES ES MAYOR A 3
+				GOTO	MENSAJE_2; DEBE DECIRLE QUE VAYA AL MEDICO
+				MOVLW 	H'03' ;HABRA QUE PREGUNTAS SI ES EXACTAMENTE IGUAL A 3
+				MOVWF   REGCOMP1 
+				MOVF    REGAD1,W ;SE MEUVEN LAS DECENAS A W
+				SUBWF	REGCOMP1,REGCOMP1	;SE RESTA 3 - DECENAS
+				BTFSS   STATUS,Z ;SE PREGUNTA SI EL RESULTADO ES 0(SON IGUALES)
+				GOTO	MENSAJE_5 ;LO MANDA A TOMAR GEL, TIENE MENOS DE 37 DE TEMPERTATURA
+				MOVLW 	H'07' ;SE MUEVE UN 7 AL REGISTRO DE COMPARACION1
+				MOVWF   REGCOMP1 
+				MOVF    REGAD2,W ;SE MUEVEN LAS UNIDAES A W
+				SUBWF	REGCOMP1,REGCOMP1	;SE RESTA 7 - UNIDADES
+				BTFSS	STATUS,C ;SI CARRY ES 0 ENTONCES ES MAYOR A 7
+				GOTO 	MENSAJE_2
+				MOVLW 	H'07' ;HABRA QUE PREGUNTAS SI ES EXACTAMENTE IGUAL A 7
+				MOVWF   REGCOMP1 
+				MOVF    REGAD1,W ;SE MEUVEN LAS DECENAS A W
+				SUBWF	REGCOMP1,REGCOMP1	;SE RESTA 7 - DECENAS
+				BTFSS   STATUS,Z ;SE PREGUNTA SI EL RESULTADO ES 0(SON IGUALES)
+				GOTO	MENSAJE_5 ;LO MANDA A TOMAR GEL, TIENE MENOS DE 37 DE TEMPERTATURA
+				MOVLW 	H'03' ;SE MUEVE UN 3 AL REGISTRO DE COMPARACION1
+				MOVWF   REGCOMP1 
+				MOVF    REGAD3,W ;SE MEUVEN LAS CENTECIMAS
+				SUBWF	REGCOMP1,REGCOMP1	;SE RESTA 3 - CENTECIMAS
+				BTFSS	STATUS,C ;SI CARRY ES 0 ENTONCES ES MAYOR A 3
+				GOTO	MENSAJE_2; DEBE DECIRLE QUE VAYA AL MEDICO
+				GOTO	MENSAJE_5;SI NO PUEDE PASAR
 SAL_INT:		BCF   	INTCON,T0IF	  	;Bandera de desbordamiento. T0IF = 0
 SAL_NO_FUE_TMR0:RETFIE				  	;Return de interrupcion
 ;**********************************************************
@@ -252,10 +282,11 @@ MENSAJE_1:		CALL	INICIA_LCD
 ;/////////////////////////////
 ; 		MENSAJE 2
 ;/////////////////////////////
-MENSAJE_2:		MOVLW   HOME
-   				CALL    COMANDO
+MENSAJE_2:		CALL	INICIA_LCD
 				CALL    RETARDO_200ms
-				MOVLW   0x84
+				CALL    RETARDO_200ms
+				CALL    RETARDO_200ms
+				MOVLW   0x83
    				CALL    COMANDO 		;LCD: "VISITE UN MEDICO"
    				MOVLW  	A'V'
 	        	CALL   	DATOS
@@ -275,7 +306,7 @@ MENSAJE_2:		MOVLW   HOME
 	        	CALL   	DATOS
 	        	MOVLW  	A'N'
 	        	CALL   	DATOS
-	        	MOVLW  	0xC6
+	        	MOVLW  	0xC64
 	        	CALL   	COMANDO
 	        	MOVLW  	A'M'
 	        	CALL   	DATOS
@@ -290,7 +321,9 @@ MENSAJE_2:		MOVLW   HOME
 	        	MOVLW  	A'O'
 	        	CALL   	DATOS
 	        	CALL	RETARDO_1s
-	        	RETURN
+				CALL	RETARDO_1s
+				CALL	RETARDO_1s
+		        GOTO 	INICIO
 ;/////////////////////////////
 ; 		MENSAJE 3
 ;/////////////////////////////
@@ -321,8 +354,8 @@ MENSAJE_3:		CALL	INICIA_LCD
 	        	MOVLW  	A'R'
 	        	CALL   	DATOS
 	        	MOVLW  	A'A'
-	        	CALL   	DATOS
-	        	CALL	RETARDO_1s
+	      		CALL 	DATOS
+				CALL    RETARDO_1s
 	        	RETURN
 ;/////////////////////////////
 ; 		MENSAJE 4
@@ -363,6 +396,33 @@ MENSAJE_4:		CALL	INICIA_LCD
 	        	CALL   	DATOS
 	        	CALL	RETARDO_1s
 	        	RETURN
+;/////////////////////////////
+; 		MENSAJE 5
+;/////////////////////////////
+MENSAJE_5:		CALL	INICIA_LCD
+				CALL    RETARDO_200ms
+				CALL    RETARDO_200ms
+				CALL    RETARDO_200ms
+				MOVLW   0x83
+   				CALL    COMANDO 		;LCD: "TOME GEL"
+   				MOVLW  	A'T'
+	        	CALL   	DATOS
+				MOVLW  	A'O'
+	        	CALL   	DATOS
+				MOVLW  	A'M'
+	        	CALL   	DATOS
+	        	MOVLW  	A'E'
+	        	CALL   	DATOS
+	        	MOVLW  	A' '
+	        	CALL   	DATOS
+	        	MOVLW  	A'G'
+	        	CALL   	DATOS
+	        	MOVLW  	A'E'
+	        	CALL   	DATOS
+	        	MOVLW  	A'L'
+	        	CALL   	DATOS
+	        	CALL	RETARDO_1s
+	        	GOTO 	INICIO
 ;////////////////////
 ; 	 LECTURA A-D
 ;////////////////////		
