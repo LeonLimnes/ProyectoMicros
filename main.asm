@@ -6,7 +6,9 @@ include<p16f877.inc>
 ;////////////////////
 ; COMANDOS LCD
 ;////////////////////
-HOME 	EQU H'02'
+HOME 	   EQU H'02'
+ENTER      EQU H'C0'
+LIMPIALCD  EQU H'01'
 ;////////////////////////////////
 ; REGISTROS PARA INTERRUPCIONES
 ;////////////////////////////////
@@ -122,11 +124,9 @@ INTERRUPCIONES:	BTFSS 	INTCON,T0IF	  	;ï¿½T0IF = 1?
 			;Envio valor leido a lcd
 			;/////////////////////////
 			 
-VALOR_AD:		MOVLW   0x01
-   				CALL    COMANDO
-				MOVLW   0x80
-   				CALL    COMANDO
-				CALL    RETARDO_200ms
+VALOR_AD:		CALL	MENSAJE_3
+				MOVLW  	0xC4
+	        	CALL   	COMANDO
 				CALL    LEEAD
 	        	MOVF    REGA,0
 	        	MOVWF   REGVAL
@@ -195,10 +195,12 @@ DATOS:	 		MOVWF 	PORTB
 ;/////////////////////////////
 ; 		MENSAJE 1
 ;/////////////////////////////
-MENSAJE_1:		MOVLW   HOME
+MENSAJE_1:		CALL	INICIA_LCD
+				CALL    RETARDO_200ms
+				CALL    RETARDO_200ms
+				CALL    RETARDO_200ms
+				MOVLW   0x81
    				CALL    COMANDO 		;LCD: "VENGA AL SENSOR"
-   				MOVLW  	A'V'
-	        	CALL   	DATOS
    		    	MOVLW  	A'V'
 	        	CALL   	DATOS
 	        	MOVLW  	A'E'
@@ -228,6 +230,81 @@ MENSAJE_1:		MOVLW   HOME
 	        	MOVLW  	A'O'
 	        	CALL   	DATOS
 	        	MOVLW  	A'R'
+	        	CALL   	DATOS
+	        	CALL	RETARDO_1s
+	        	RETURN
+;/////////////////////////////
+; 		MENSAJE 2
+;/////////////////////////////
+MENSAJE_2:		MOVLW   HOME
+   				CALL    COMANDO
+				CALL    RETARDO_200ms
+				MOVLW   0x84
+   				CALL    COMANDO 		;LCD: "VISITE UN MEDICO"
+   				MOVLW  	A'V'
+	        	CALL   	DATOS
+   		    	MOVLW  	A'I'
+	        	CALL   	DATOS
+	        	MOVLW  	A'S'
+	        	CALL   	DATOS
+	        	MOVLW  	A'I'
+	        	CALL   	DATOS
+	        	MOVLW  	A'T'
+	        	CALL   	DATOS
+	        	MOVLW  	A'E'
+	        	CALL   	DATOS
+	        	MOVLW  	A' '
+	        	CALL   	DATOS
+	        	MOVLW  	A'U'
+	        	CALL   	DATOS
+	        	MOVLW  	A'N'
+	        	CALL   	DATOS
+	        	MOVLW  	0xC6
+	        	CALL   	COMANDO
+	        	MOVLW  	A'M'
+	        	CALL   	DATOS
+	        	MOVLW  	A'E'
+	        	CALL   	DATOS
+	        	MOVLW  	A'D'
+	        	CALL   	DATOS
+				MOVLW  	A'I'
+	        	CALL   	DATOS
+	        	MOVLW  	A'C'
+	        	CALL   	DATOS
+	        	MOVLW  	A'O'
+	        	CALL   	DATOS
+	        	CALL	RETARDO_1s
+	        	RETURN
+;/////////////////////////////
+; 		MENSAJE 3
+;/////////////////////////////
+MENSAJE_3:		CALL	INICIA_LCD
+				CALL    RETARDO_200ms
+				CALL    RETARDO_200ms
+				CALL    RETARDO_200ms
+				MOVLW   0x83
+   				CALL    COMANDO 		;LCD: "TEMPERATURA"
+   				MOVLW  	A'T'
+	        	CALL   	DATOS
+   		    	MOVLW  	A'E'
+	        	CALL   	DATOS
+	        	MOVLW  	A'M'
+	        	CALL   	DATOS
+	        	MOVLW  	A'P'
+	        	CALL   	DATOS
+	        	MOVLW  	A'E'
+	        	CALL   	DATOS
+	        	MOVLW  	A'R'
+	        	CALL   	DATOS
+	        	MOVLW  	A'A'
+	        	CALL   	DATOS
+	        	MOVLW  	A'T'
+	        	CALL   	DATOS
+	        	MOVLW  	A'U'
+	        	CALL   	DATOS
+	        	MOVLW  	A'R'
+	        	CALL   	DATOS
+	        	MOVLW  	A'A'
 	        	CALL   	DATOS
 	        	CALL	RETARDO_1s
 	        	RETURN
@@ -350,6 +427,7 @@ CONVIERTE_DEC: MOVLW  	A' '
 			   CALL  	MULTIPLICA	;se muiltplica por 10 
 			   MOVF  	REG03,W	;Aquí va regsal2
 			   MOVWF 	REGCONV
+			   MOVWF    REGAD2     ;SE MUEVEN LAS UNIDADES
 			   CALL  	CONVERTIR
 			   CLRF  	REG03
 			   CLRF  	REG02		;se realiza la multiplciacion con lo que quedó en la parte decimal de la multplicacion
@@ -360,6 +438,7 @@ CONVIERTE_DEC: MOVLW  	A' '
 			   CALL  	MULTIPLICA
 			   MOVF  	REG03,W	;Aquí va regsal3
 			   MOVWF 	REGCONV
+			   MOVWF    REGAD3     ;SE MUEVEN LAS CENTECIMAS
 			   CALL  	CONVERTIR
 			   CLRF  	REG03
 			   CLRF  	REG02
