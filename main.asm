@@ -110,12 +110,12 @@ INICIO:			BSF   	STATUS,5		;Cambio de banco
 INTERRUPCIONES:	BTFSS 	INTCON,T0IF	  	;ï¿½T0IF = 1?
 				GOTO  	SAL_NO_FUE_TMR0 ;No: ir a SAL_NO_FUE_TMR0
 				INCF  	CONTADOR		;Si: incrementar CONTADOR
-				MOVLW 	D'150'		  	;W = D'150'
+				MOVLW 	D'10'		  	;W = D'150'
 				SUBWF 	CONTADOR,W	  	;W = CONTADOR - D'150'
 				BTFSS 	STATUS,Z		;ï¿½CONTADOR = D'150'?
 				GOTO  	SAL_INT		  	;No: ir a SAL_INT
 				CALL	MENSAJE_1		;Si: ir a MENSAJE_1
-				CALL    RETARDO_1s		;un retardo
+			
 			;/////////////////////////
 			;Envio valor leido a lcd
 			;/////////////////////////
@@ -337,7 +337,7 @@ LIMPIA:		CLRF    REG01		;Limpia regitros de operaciones
 ;-------------------------------------------------------------------------------
 CONVIERTE_DEC: MOVF		REG03,W    ;Aquï¿½ va regsal1
 			   MOVWF    REGSAL1	   ;DECENAS DEL VALOR DE TEMPERATURA
-			   MOVLW  	A'V'
+			   MOVLW  	A' '
 	           CALL   	DATOS
 			   MOVWF 	REGCONV
 			   CALL  	CONVERTIR
@@ -371,7 +371,7 @@ CONVIERTE_DEC: MOVF		REG03,W    ;Aquï¿½ va regsal1
 			   CALL  	CONVERTIR
 			   CLRF  	REG03
 			   CLRF  	REG02
-			   MOVLW   	A'Â°'
+			   MOVLW   	A'°'
 	           CALL    	DATOS
 			   MOVLW   	A'C'
 	           CALL    	DATOS
