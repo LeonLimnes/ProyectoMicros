@@ -1,6 +1,6 @@
 processor 16f877
 include<p16f877.inc>
-;PropÃ³sito: sistema para el control de flujo de personas hacia el interior de un
+;Proposito: sistema para el control de flujo de personas hacia el interior de un
 ;			 establecimiento en un contexto de pandemia por coronavirus (COVID-19).
 
 CONTADOR  EQU H'20'	
@@ -75,7 +75,11 @@ INTERRUPCIONES:	BTFSS 	INTCON,T0IF	  	;¿T0IF = 1?
 				SUBWF 	CONTADOR,W	  	;W = CONTADOR - D'150'
 				BTFSS 	STATUS,Z		;¿CONTADOR = D'150'?
 				GOTO  	SAL_INT		  	;No: ir a SAL_INT
-				CALL	MENSAJE_1		;Si: ir a MENSAJE_1
+										;Si:
+SENSOR_1:		BTFSS	PORTD,0			;¿Hay alguien en el sensor para tomar la temperatura?
+				GOTO	SENSOR_1		;No: volver a preguntar
+				
+									
 				CLRF  	CONTADOR		;Limpiar el registro CONTADOR
 SAL_INT:		BCF   	INTCON,T0IF	  	;Bandera de desbordamiento. T0IF = 0
 SAL_NO_FUE_TMR0:RETFIE				  	;Return de interrupcion
@@ -126,11 +130,9 @@ DATOS:	 		MOVWF 	PORTB
 ;/////////////////////////////
 ; 		MENSAJE 1
 ;/////////////////////////////
-MENSAJE_1:		MOVLW   HOME
+MENSAJE_1:		MOVLW   0x80
    				CALL    COMANDO 		;LCD: "VENGA AL SENSOR"
    				MOVLW  	A'V'
-	        	CALL   	DATOS
-   		    	MOVLW  	A'V'
 	        	CALL   	DATOS
 	        	MOVLW  	A'E'
 	        	CALL   	DATOS
@@ -161,7 +163,7 @@ MENSAJE_1:		MOVLW   HOME
 	        	MOVLW  	A'R'
 	        	CALL   	DATOS
 	        	CALL	RETARDO_1s
-	        	RETURN
+	        	GOTO	$
 ;////////////////////
 ; 	 LECTURA A-D
 ;////////////////////		
@@ -200,7 +202,7 @@ LOOP:	 		DECFSZ  VAL				;VAL = VAL-1 y VAL = 0?
 ;///////////////////
 RETARDO_1s:    MOVLW  CONST3 	;Carga lo vlaores para el while principal
 		  	   MOVWF  REG3
-LOOP3:  	   MOVLW  CONST2	;este es el loop mÃ¡s externo
+LOOP3:  	   MOVLW  CONST2	;este es el loop mas externo
 			   MOVWF  REG2
 LOOP2:	 	   MOVLW  CONST1	;el loop de enmedio
 		 	   MOVWF  REG1	
