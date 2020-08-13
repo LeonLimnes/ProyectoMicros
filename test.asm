@@ -40,8 +40,8 @@ REGCONV	  EQU H'28'  ;Numero a convertir
 ;///////////////////////
 ; REGISTROS DIVISION
 ;///////////////////////
-REGA      EQU H'29'      ;donde estarï¿½ el nï¿½mero hexadecimal
-REGB      EQU H'2A'      ;Aquï¿½ se guardara el divisor 
+REGA      EQU H'29'      ;donde estará el número hexadecimal
+REGB      EQU H'2A'      ;Aquí se guardara el divisor 
 REGAUX    EQU H'2B'      ;Registro auxiliar
 REGDIV    EQU H'2C'      ;Registro que almacena el resultado
 REGRES    EQU H'2D'		 ;Registro que almacena el residuo
@@ -53,7 +53,7 @@ REGA1  	  EQU H'2F'
 REGB1     EQU H'30'
 
 ;Registros de rutina 11
-REGVAL    EQU H'31' 		;registro donde estï¿½ el valor a convertir
+REGVAL    EQU H'31' 		;registro donde está el valor a convertir
 REG01     EQU H'32'			;
 REG02     EQU H'33'			;Registros de ayuda para las operaciones	
 REG03     EQU H'34'			;
@@ -67,12 +67,6 @@ CONTADOR EQU H'37'
 REGAD1 		EQU H'38'
 REGAD2      EQU H'39'
 REGAD3      EQU H'3A'
-;////////////////////////////////
-;REGISTROS PARA COMPARACION
-;////////////////////////////////
-REGAD1 		EQU H'3B'
-REGAD2      EQU H'3C'
-REGAD3      EQU H'3D'
 ;////////////////////
 ; INICIO
 ;////////////////////
@@ -117,19 +111,19 @@ INICIO:			BSF   	STATUS,5		;Cambio de banco
 				CLRF  	CONTADOR		;Limpiar el registro CONTADOR
 				CALL	MENSAJE_1
 				GOTO  	$				;Loop infinito
-INTERRUPCIONES:	BTFSS 	INTCON,T0IF	  	;ï¿½T0IF = 1?
+INTERRUPCIONES:	BTFSS 	INTCON,T0IF	  	;¿T0IF = 1?
 				GOTO  	SAL_NO_FUE_TMR0 ;No: ir a SAL_NO_FUE_TMR0
 				INCF  	CONTADOR		;Si: incrementar CONTADOR
 				MOVLW 	D'150'		  	;W = D'150'
 				SUBWF 	CONTADOR,W	  	;W = CONTADOR - D'150'
-				BTFSS 	STATUS,Z		;ï¿½CONTADOR = D'150'?
+				BTFSS 	STATUS,Z		;¿CONTADOR = D'150'?
 				GOTO  	SAL_INT		  	;No: ir a SAL_INT
 				CALL	ENCENDER_MOTOR
 			;/////////////////////////
 			;Envio valor leido a lcd
 			;/////////////////////////
 			 
-VALOR_AD:		CALL	MENSAJE_4
+VALOR_AD:		CALL	MENSAJE_3
 				MOVLW  	0xC4
 	        	CALL   	COMANDO
 				CALL    LEEAD
@@ -148,10 +142,7 @@ VALOR_AD:		CALL	MENSAJE_4
 				CALL 	DIVIDE_ENTRE_256
 				CALL 	SUMA
 				CALL 	CONVIERTE_DEC
-;/////////////////////////
-;Comparacion temperatura
-;/////////////////////////
-				
+				GOTO    VALOR_AD
 				CLRF  	CONTADOR		;Limpiar el registro CONTADOR
 SAL_INT:		BCF   	INTCON,T0IF	  	;Bandera de desbordamiento. T0IF = 0
 SAL_NO_FUE_TMR0:RETFIE				  	;Return de interrupcion
@@ -204,9 +195,10 @@ DATOS:	 		MOVWF 	PORTB
 ; 		ENCENDER MOTOR
 ;/////////////////////////////
 ENCENDER_MOTOR: MOVLW 	D'150'			;W = D'150'
-				MOVWF 	CCPR2L			;Define el tiempo en alto de la seï¿½al
+				MOVWF 	CCPR2L			;Define el tiempo en alto de la seÃ±al
 				CALL	RETARDO_1s 		;Llamar a retardo
-				CLRF 	CCPR2L			;Tiempo en alto de la seï¿½al
+				MOVLW 	D'0'			;W = D'0'
+				MOVWF 	CCPR2L			;Define el tiempo en alto de la seÃ±al
 				RETURN
 ;/////////////////////////////
 ; 		MENSAJE 1
@@ -368,7 +360,7 @@ MENSAJE_4:		CALL	INICIA_LCD
 ;////////////////////		
 LEEAD:  		BSF   	ADCON0,2		;Bandera GO/DONE = 1 para iniciar la conversion
 				CALL  	RETARDO_20us	;Esperar 20 micro segundos
-ESPERA: 		BTFSC 	ADCON0,2		;ï¿½GO/DONE = 0? (termino conversion)
+ESPERA: 		BTFSC 	ADCON0,2		;Â¿GO/DONE = 0? (termino conversion)
 				GOTO  	ESPERA			;No: espera
 				MOVF  	ADRESH,W		;Si: W = Resultado del convertidor A/D (ADRESH)
 				MOVWF 	REGA			;Se mueve el resultado al REGA
@@ -466,12 +458,12 @@ LIMPIA:		CLRF    REG01		;Limpia regitros de operaciones
 ; CONVERSION A DECIMAL
 ;//////////////////////
 ;-------------------------------------------------------------------------------
-;Convierte un nï¿½mero hexadecimal , donde en un registro esta la parte entera y 
+;Convierte un número hexadecimal , donde en un registro esta la parte entera y 
 ;en el otro la mantisa a un numero en base 10 con 3 cifras
 ;-------------------------------------------------------------------------------
 CONVIERTE_DEC: MOVLW  	A' '
 	           CALL   	DATOS
-			   MOVF		REG03,W    ;Aquï¿½ va regsal1
+			   MOVF		REG03,W    ;Aquí va regsal1
 			   MOVWF 	REGCONV
 			   MOVWF    REGAD1     ;SE MUEVEN LA DECENAS
 			   CALL  	CONVERTIR
@@ -480,18 +472,18 @@ CONVIERTE_DEC: MOVLW  	A' '
 			   MOVLW 	H'0B'	  	;se mueve un 11 a regcont para multiplidcar por 10
 			   MOVWF 	REGCONT	
 			   CALL  	MULTIPLICA	;se muiltplica por 10 
-			   MOVF  	REG03,W	;Aquï¿½ va regsal2
+			   MOVF  	REG03,W	;Aquí va regsal2
 			   MOVWF 	REGCONV
 			   MOVWF    REGAD2     ;SE MUEVEN LAS UNIDADES
 			   CALL  	CONVERTIR
 			   CLRF  	REG03
-			   CLRF  	REG02		;se realiza la multiplciacion con lo que quedï¿½ en la parte decimal de la multplicacion
+			   CLRF  	REG02		;se realiza la multiplciacion con lo que quedó en la parte decimal de la multplicacion
 			   MOVLW  	A'.'
 	           CALL   	DATOS
 			   MOVLW 	H'0B'
 			   MOVWF 	REGCONT
 			   CALL  	MULTIPLICA
-			   MOVF  	REG03,W	;Aquï¿½ va regsal3
+			   MOVF  	REG03,W	;Aquí va regsal3
 			   MOVWF 	REGCONV
 			   MOVWF    REGAD3     ;SE MUEVEN LAS CENTECIMAS
 			   CALL  	CONVERTIR
@@ -500,7 +492,7 @@ CONVIERTE_DEC: MOVLW  	A' '
 			   MOVLW 	H'0B'
 			   MOVWF 	REGCONT
 			   CALL  	MULTIPLICA
-			   MOVF  	REG03,W	;Aquï¿½ va regsal4
+			   MOVF  	REG03,W	;Aquí va regsal4
 			   MOVWF 	REGCONV
 			   CALL  	CONVERTIR
 			   CLRF  	REG03
