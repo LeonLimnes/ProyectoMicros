@@ -1,6 +1,6 @@
 processor 16f877
 include<p16f877.inc>
-;PropÃƒÂ³sito: sistema para el control de flujo de personas hacia el interior de un
+;Proposito: sistema para el control de flujo de personas hacia el interior de un
 ;			 establecimiento en un contexto de pandemia por coronavirus (COVID-19).
 
 ;////////////////////
@@ -38,8 +38,8 @@ REGCONV	  EQU H'28'  ;Numero a convertir
 ;///////////////////////
 ; REGISTROS DIVISION
 ;///////////////////////
-REGA      EQU H'29'      ;donde estará el número hexadecimal
-REGB      EQU H'2A'      ;Aquí se guardara el divisor 
+REGA      EQU H'29'      ;donde estarï¿½ el nï¿½mero hexadecimal
+REGB      EQU H'2A'      ;Aquï¿½ se guardara el divisor 
 REGAUX    EQU H'2B'      ;Registro auxiliar
 REGDIV    EQU H'2C'      ;Registro que almacena el resultado
 REGRES    EQU H'2D'		 ;Registro que almacena el residuo
@@ -51,7 +51,7 @@ REGA1  	  EQU H'2F'
 REGB1     EQU H'30'
 
 ;Registros de rutina 11
-REGVAL    EQU H'31' 		;registro donde está el valor a convertir
+REGVAL    EQU H'31' 		;registro donde estï¿½ el valor a convertir
 REG01     EQU H'32'			;
 REG02     EQU H'33'			;Registros de ayuda para las operaciones	
 REG03     EQU H'34'			;
@@ -59,6 +59,10 @@ REG04     EQU H'35'			;
 REGCONT   EQU H'36'			;contador
 
 CONTADOR EQU H'37'
+
+REGSAL1	  EQU H'38'
+REGSAL2	  EQU H'39'
+REGSAL3	  EQU H'3A'
 ;////////////////////
 ; INICIO
 ;////////////////////
@@ -189,11 +193,11 @@ DATOS:	 		MOVWF 	PORTB
 ;/////////////////////////////
 ; 		MENSAJE 1
 ;/////////////////////////////
-MENSAJE_1:		MOVLW   HOME
+MENSAJE_1:		MOVLW   0x80
    				CALL    COMANDO 		;LCD: "VENGA AL SENSOR"
-   				MOVLW  	A'V'
+				MOVLW  	A' '
 	        	CALL   	DATOS
-   		    	MOVLW  	A'V'
+   				MOVLW  	A'V'
 	        	CALL   	DATOS
 	        	MOVLW  	A'E'
 	        	CALL   	DATOS
@@ -224,7 +228,7 @@ MENSAJE_1:		MOVLW   HOME
 	        	MOVLW  	A'R'
 	        	CALL   	DATOS
 	        	CALL	RETARDO_1s
-	        	RETURN
+	        	GOTO	$
 ;////////////////////
 ; 	 LECTURA A-D
 ;////////////////////		
@@ -328,28 +332,33 @@ LIMPIA:		CLRF    REG01		;Limpia regitros de operaciones
 ; CONVERSION A DECIMAL
 ;//////////////////////
 ;-------------------------------------------------------------------------------
-;Convierte un número hexadecimal , donde en un registro esta la parte entera y 
+;Convierte un nï¿½mero hexadecimal , donde en un registro esta la parte entera y 
 ;en el otro la mantisa a un numero en base 10 con 3 cifras
 ;-------------------------------------------------------------------------------
-CONVIERTE_DEC: MOVF		REG03,W    ;Aquí va regsal1
+CONVIERTE_DEC: MOVF		REG03,W    ;Aquï¿½ va regsal1
+			   MOVWF    REGSAL1	   ;DECENAS DEL VALOR DE TEMPERATURA
+			   MOVLW  	A'V'
+	           CALL   	DATOS
 			   MOVWF 	REGCONV
 			   CALL  	CONVERTIR
 			   CLRF  	REG03
 			   CLRF  	REG02     	;Se limpian registros para usarlos
-			   MOVLW  	A'.'
-	           CALL   	DATOS
 			   MOVLW 	H'0B'	  	;se mueve un 11 a regcont para multiplidcar por 10
 			   MOVWF 	REGCONT	
 			   CALL  	MULTIPLICA	;se muiltplica por 10 
-			   MOVF  	REG03,W	;Aquí va regsal2
+			   MOVF  	REG03,W	;Aquï¿½ va regsal2
+			   MOVWF  	REGSAL2		;UNIDADES DEL VALOR DE TEMPERATURA
 			   MOVWF 	REGCONV
 			   CALL  	CONVERTIR
+			   MOVLW  	A'.'
+	           CALL   	DATOS
 			   CLRF  	REG03
-			   CLRF  	REG02		;se realiza la multiplciacion con lo que quedó en la parte decimal de la multplicacion
+			   CLRF  	REG02		;se realiza la multiplciacion con lo que quedï¿½ en la parte decimal de la multplicacion
 			   MOVLW 	H'0B'
 			   MOVWF 	REGCONT
 			   CALL  	MULTIPLICA
-			   MOVF  	REG03,W	;Aquí va regsal3
+			   MOVF  	REG03,W	;Aquï¿½ va regsal3
+			   MOVWF    REGSAL3		;CENTIMOS DEL VALOR DE TEMPERATURA
 			   MOVWF 	REGCONV
 			   CALL  	CONVERTIR
 			   CLRF  	REG03
@@ -357,12 +366,14 @@ CONVIERTE_DEC: MOVF		REG03,W    ;Aquí va regsal1
 			   MOVLW 	H'0B'
 			   MOVWF 	REGCONT
 			   CALL  	MULTIPLICA
-			   MOVF  	REG03,W	;Aquí va regsal4
+			   MOVF  	REG03,W	;Aquï¿½ va regsal4
 			   MOVWF 	REGCONV
 			   CALL  	CONVERTIR
 			   CLRF  	REG03
 			   CLRF  	REG02
-			   MOVLW   	A'V'
+			   MOVLW   	A'Â°'
+	           CALL    	DATOS
+			   MOVLW   	A'C'
 	           CALL    	DATOS
 	           CALL		RETARDO_1s
 			   RETURN 
@@ -410,7 +421,7 @@ LOOP:	 		DECFSZ  VAL				;VAL = VAL-1 y VAL = 0?
 ;///////////////////
 RETARDO_1s:    MOVLW  CONST3 	;Carga lo vlaores para el while principal
 		  	   MOVWF  REG3
-LOOP3:  	   MOVLW  CONST2	;este es el loop mÃ¡s externo
+LOOP3:  	   MOVLW  CONST2	;este es el loop mas externo
 			   MOVWF  REG2
 LOOP2:	 	   MOVLW  CONST1	;el loop de enmedio
 		 	   MOVWF  REG1	
