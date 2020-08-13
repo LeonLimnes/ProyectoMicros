@@ -120,6 +120,7 @@ VALOR_AD:		MOVLW   0x01
    				CALL    COMANDO
 				MOVLW   0x80
    				CALL    COMANDO
+				CALL    RETARDO_200ms
 				CALL    LEEAD
 	        	MOVF    REGA,0
 	        	MOVWF   REGVAL
