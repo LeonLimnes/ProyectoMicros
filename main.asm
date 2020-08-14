@@ -86,7 +86,7 @@ INICIO:			BSF   	STATUS,5		;Cambio de banco
 				CLRF   	ADCON1			;Configura al puerto A como entrada analogica
 				CLRF  	TRISB			;Configura al puerto B como salida (LCD)
 				CLRF  	TRISC			;Configura al puerto C como salida
-				MOVLW 	H'C0'			;
+				MOVLW 	H'FF'			;
 				MOVWF  	TRISD			;Configura al puerto D[0,1] como entrada
 				MOVLW 	B'00000111'	  	;PS2=1,PS1=1,PS=1
 				MOVWF 	OPTION_REG	  	;Pre-divisor del TMR0 = 256
@@ -124,12 +124,12 @@ INTERRUPCIONES:	BTFSS 	INTCON,T0IF	  	;�T0IF = 1?
 				SUBWF 	CONTADOR,W	  	;W = CONTADOR - D'150'
 				BTFSS 	STATUS,Z		;�CONTADOR = D'150'?
 				GOTO  	SAL_INT		  	;No: ir a SAL_INT
-				CALL	ENCENDER_MOTOR
 				CLRF  	CONTADOR		;Limpiar el registro CONTADOR
+SENSOR_1:       BTFSS   PORTD,0         ;¿Hay alguien en el sensor para tomar la temperatura?
+                GOTO    SENSOR_1        ;No: volver a preguntar
 			;/////////////////////////
 			;Envio valor leido a lcd
 			;/////////////////////////
-			 
 VALOR_AD:		CALL	MENSAJE_3;	MENSAJE DE TEMPERATURA
 				MOVLW  	0xC4
 	        	CALL   	COMANDO
@@ -185,6 +185,17 @@ VALOR_AD:		CALL	MENSAJE_3;	MENSAJE DE TEMPERATURA
 				GOTO	MENSAJE_5;SI NO PUEDE PASAR
 SAL_INT:		BCF   	INTCON,T0IF	  	;Bandera de desbordamiento. T0IF = 0
 SAL_NO_FUE_TMR0:RETFIE				  	;Return de interrupcion
+
+TOMAR_GEL:		BTFSS   PORTD,1         ;¿Hay alguien en el sensor para tomar la temperatura?
+                GOTO    MENSAJE_5        ;No: volver a preguntar
+				CALL 	ENCENDER_MOTOR	;DA GEL
+				CALL	MENSAJE_4		;PUEDE INGRESAR
+				BSF 	PORTC,3			;LED DE INDICACION
+				CALL	RETARDO_1s
+				CALL	RETARDO_1s		;TIENE 3 SEGUNDOS PARA INGRESAR
+				CALL	RETARDO_1s
+				BCF		PORTC,3			;SE APAGA LED
+				GOTO 	INICIO			;INICIO					
 ;**********************************************************
 ;***********************--------------*********************
 ;						  FUNCIONES
@@ -235,6 +246,7 @@ DATOS:	 		MOVWF 	PORTB
 ;/////////////////////////////
 ENCENDER_MOTOR: MOVLW 	D'150'			;W = D'150'
 				MOVWF 	CCPR2L			;Define el tiempo en alto de la se�al
+				CALL	RETARDO_1s 		;Llamar a retardo
 				CALL	RETARDO_1s 		;Llamar a retardo
 				CLRF 	CCPR2L			;Tiempo en alto de la se�al
 				RETURN
@@ -422,7 +434,7 @@ MENSAJE_5:		CALL	INICIA_LCD
 	        	MOVLW  	A'L'
 	        	CALL   	DATOS
 	        	CALL	RETARDO_1s
-	        	GOTO 	INICIO
+	        	GOTO 	TOMAR_GEL
 ;////////////////////
 ; 	 LECTURA A-D
 ;////////////////////		
