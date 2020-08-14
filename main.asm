@@ -318,7 +318,7 @@ MENSAJE_2:		CALL	INICIA_LCD
 	        	CALL   	DATOS
 	        	MOVLW  	A'N'
 	        	CALL   	DATOS
-	        	MOVLW  	0xC64
+	        	MOVLW  	0xC4
 	        	CALL   	COMANDO
 	        	MOVLW  	A'M'
 	        	CALL   	DATOS
